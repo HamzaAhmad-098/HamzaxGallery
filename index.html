@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hamzax Family Gallery</title>
+  <title>Hamzax Gallery – Instant</title>
+  <!-- Preconnect to worker and CDN for faster connections -->
+  <link rel="preconnect" href="https://gentle-bread-3cb2.jhaji1223.workers.dev">
+  <link rel="preconnect" href="https://gallery.hamzaxdevelopers.dpdns.org">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #0a0a0f;
       color: #f0ede8;
@@ -34,34 +33,11 @@
       backdrop-filter: blur(4px);
       box-shadow: 0 24px 48px rgba(0,0,0,0.5);
     }
-    .lock-icon {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 24px;
-      background: rgba(201,169,110,0.08);
-      border-radius: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    h1 {
-      font-size: 28px;
-      font-weight: 500;
-      letter-spacing: -0.5px;
-      color: #c9a96e;
-    }
-    h1 span {
-      color: #f0ede8;
-    }
-    .sub {
-      margin: 12px 0 32px;
-      color: #7a7a8c;
-      font-size: 14px;
-    }
-    .input-group {
-      position: relative;
-      margin-bottom: 20px;
-    }
+    .lock-icon { font-size: 48px; margin-bottom: 20px; }
+    h1 { font-size: 28px; font-weight: 500; letter-spacing: -0.5px; color: #c9a96e; }
+    h1 span { color: #f0ede8; }
+    .sub { margin: 12px 0 32px; color: #7a7a8c; font-size: 14px; }
+    .input-group { position: relative; margin-bottom: 20px; }
     input {
       width: 100%;
       padding: 14px 18px;
@@ -70,14 +46,9 @@
       border-radius: 16px;
       color: white;
       font-size: 16px;
-      letter-spacing: 0.5px;
       outline: none;
-      transition: 0.2s;
     }
-    input:focus {
-      border-color: #c9a96e;
-      box-shadow: 0 0 0 3px rgba(201,169,110,0.1);
-    }
+    input:focus { border-color: #c9a96e; box-shadow: 0 0 0 3px rgba(201,169,110,0.1); }
     .toggle-pw {
       position: absolute;
       right: 16px;
@@ -100,23 +71,11 @@
       width: 100%;
       transition: 0.2s;
     }
-    button:hover {
-      background: #d4b37a;
-      transform: translateY(-1px);
-    }
-    .error {
-      color: #e05555;
-      font-size: 13px;
-      margin-top: 12px;
-      display: none;
-    }
-    .error.show {
-      display: block;
-    }
+    button:hover { background: #d4b37a; transform: translateY(-1px); }
+    .error { color: #e05555; font-size: 13px; margin-top: 12px; display: none; }
+    .error.show { display: block; }
     /* App shell */
-    #app {
-      display: none;
-    }
+    #app { display: none; }
     header {
       display: flex;
       justify-content: space-between;
@@ -130,19 +89,9 @@
       flex-wrap: wrap;
       gap: 12px;
     }
-    .logo {
-      font-size: 22px;
-      font-weight: 500;
-      color: #c9a96e;
-    }
-    .logo span {
-      color: white;
-    }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
+    .logo { font-size: 22px; font-weight: 500; color: #c9a96e; }
+    .logo span { color: white; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
     .session-badge {
       background: #1c1c26;
       padding: 6px 12px;
@@ -158,32 +107,15 @@
       padding: 6px 14px;
       font-size: 13px;
     }
-    .logout-btn:hover {
-      border-color: #e05555;
-      color: #e05555;
-      background: transparent;
-      transform: none;
-    }
+    .logout-btn:hover { border-color: #e05555; color: #e05555; background: transparent; }
     .stats-bar {
       display: flex;
       border-bottom: 1px solid #2a2a38;
       background: #13131a;
     }
-    .stat {
-      flex: 1;
-      text-align: center;
-      padding: 12px;
-    }
-    .stat-value {
-      font-size: 24px;
-      font-weight: 600;
-      color: #c9a96e;
-    }
-    .stat-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      color: #7a7a8c;
-    }
+    .stat { flex: 1; text-align: center; padding: 12px; }
+    .stat-value { font-size: 24px; font-weight: 600; color: #c9a96e; }
+    .stat-label { font-size: 11px; text-transform: uppercase; color: #7a7a8c; }
     .toolbar {
       display: flex;
       justify-content: space-between;
@@ -193,10 +125,7 @@
       padding: 16px 28px;
       border-bottom: 1px solid #2a2a38;
     }
-    .filters {
-      display: flex;
-      gap: 8px;
-    }
+    .filters { display: flex; gap: 8px; }
     .chip {
       background: transparent;
       border: 1px solid #2a2a38;
@@ -206,14 +135,8 @@
       font-size: 13px;
       width: auto;
     }
-    .chip.active {
-      background: rgba(201,169,110,0.15);
-      border-color: #c9a96e;
-      color: #c9a96e;
-    }
-    .search-box {
-      position: relative;
-    }
+    .chip.active { background: rgba(201,169,110,0.15); border-color: #c9a96e; color: #c9a96e; }
+    .search-box { position: relative; }
     .search-box input {
       padding: 8px 14px 8px 36px;
       width: 220px;
@@ -225,12 +148,8 @@
       top: 50%;
       transform: translateY(-50%);
       color: #7a7a8c;
-      pointer-events: none;
     }
-    .view-toggle {
-      display: flex;
-      gap: 6px;
-    }
+    .view-toggle { display: flex; gap: 6px; }
     .view-btn {
       background: #1c1c26;
       border: 1px solid #2a2a38;
@@ -240,10 +159,7 @@
       align-items: center;
       justify-content: center;
     }
-    .view-btn.active {
-      border-color: #c9a96e;
-      color: #c9a96e;
-    }
+    .view-btn.active { border-color: #c9a96e; color: #c9a96e; }
     /* Gallery grid */
     .gallery-grid {
       display: grid;
@@ -251,9 +167,7 @@
       gap: 20px;
       padding: 28px;
     }
-    .gallery-grid.list-view {
-      grid-template-columns: 1fr;
-    }
+    .gallery-grid.list-view { grid-template-columns: 1fr; }
     .card {
       background: #13131a;
       border: 1px solid #2a2a38;
@@ -262,14 +176,8 @@
       transition: 0.2s;
       cursor: pointer;
     }
-    .card:hover {
-      transform: translateY(-3px);
-      border-color: #3a3a4a;
-    }
-    .card.sel {
-      border-color: #c9a96e;
-      box-shadow: 0 0 0 2px rgba(201,169,110,0.3);
-    }
+    .card:hover { transform: translateY(-3px); border-color: #3a3a4a; }
+    .card.sel { border-color: #c9a96e; box-shadow: 0 0 0 2px rgba(201,169,110,0.3); }
     .thumb {
       position: relative;
       aspect-ratio: 16/9;
@@ -280,8 +188,10 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: 0.3s;
+      transition: 0.2s;
+      opacity: 0;
     }
+    .thumb img.loaded { opacity: 1; }
     .play-overlay {
       position: absolute;
       inset: 0;
@@ -289,6 +199,7 @@
       align-items: center;
       justify-content: center;
       background: rgba(0,0,0,0.3);
+      pointer-events: none;
     }
     .badge {
       position: absolute;
@@ -312,14 +223,10 @@
       align-items: center;
       justify-content: center;
       color: white;
+      cursor: pointer;
     }
-    .card.sel .check {
-      background: #c9a96e;
-      color: black;
-    }
-    .info {
-      padding: 14px;
-    }
+    .card.sel .check { background: #c9a96e; color: black; }
+    .info { padding: 14px; }
     .filename {
       font-weight: 500;
       white-space: nowrap;
@@ -334,10 +241,7 @@
       gap: 12px;
       margin-bottom: 10px;
     }
-    .actions {
-      display: flex;
-      gap: 8px;
-    }
+    .actions { display: flex; gap: 8px; }
     .btn-sm {
       background: #1c1c26;
       border: 1px solid #2a2a38;
@@ -348,6 +252,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      cursor: pointer;
     }
     .btn-sm.primary {
       background: rgba(201,169,110,0.1);
@@ -363,9 +268,7 @@
       display: none;
       flex-direction: column;
     }
-    #lightbox.open {
-      display: flex;
-    }
+    #lightbox.open { display: flex; }
     .lb-header {
       display: flex;
       justify-content: space-between;
@@ -415,9 +318,7 @@
       z-index: 200;
       display: none;
     }
-    .selection-bar.show {
-      display: flex;
-    }
+    .selection-bar.show { display: flex; }
     .toast {
       position: fixed;
       bottom: 30px;
@@ -434,10 +335,7 @@
       opacity: 0;
       transition: 0.2s;
     }
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
+    .toast.show { transform: translateY(0); opacity: 1; }
     .dl-bar {
       position: fixed;
       top: 0;
@@ -451,9 +349,7 @@
       transform: translateY(-100%);
       transition: 0.2s;
     }
-    .dl-bar.show {
-      transform: translateY(0);
-    }
+    .dl-bar.show { transform: translateY(0); }
     @media (max-width: 640px) {
       .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; padding: 16px; }
       .toolbar { flex-direction: column; align-items: stretch; }
@@ -639,8 +535,19 @@
     inp.type = inp.type === 'password' ? 'text' : 'password';
   }
 
-  // ========== LOAD MEDIA (via Worker /list) ==========
+  // ========== LOAD MEDIA WITH CACHE ==========
   async function loadMedia() {
+    const cacheKey = 'gallery_filelist';
+    const cached = sessionStorage.getItem(cacheKey);
+    // Cache for 1 hour
+    if (cached && Date.now() - JSON.parse(cached).timestamp < 3600000) {
+      allItems = JSON.parse(cached).items;
+      updateStats();
+      render();
+      loadAllThumbnails();  // preload all thumbnails immediately
+      return;
+    }
+    // fresh fetch
     const galleryDiv = document.getElementById('gallery');
     galleryDiv.innerHTML = '<div style="text-align:center;padding:60px">Loading gallery...</div>';
     try {
@@ -649,9 +556,10 @@
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
       allItems = data.items || [];
+      sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), items: allItems }));
       updateStats();
       render();
-      startLazyLoading();
+      loadAllThumbnails();  // preload all thumbnails immediately
     } catch (err) {
       galleryDiv.innerHTML = `<div style="text-align:center;padding:60px;color:#e05555">Failed to load: ${err.message}</div>`;
     }
@@ -667,7 +575,7 @@
     document.getElementById('stat-size').innerText = fmtSize(totalSize);
   }
 
-  // ========== FILTER & RENDER ==========
+  // ========== RENDER & PRELOAD ALL THUMBNAILS ==========
   function getFiltered() {
     const searchLower = document.getElementById('search').value.toLowerCase();
     return allItems.filter(item => {
@@ -691,8 +599,7 @@
     gallery.innerHTML = filteredItems.map((item, idx) => `
       <div class="card ${selected.has(item.id) ? 'sel' : ''}" data-id="${item.id}" data-index="${idx}">
         <div class="thumb" data-idx="${idx}">
-          <div class="thumb-skeleton" style="position:absolute;inset:0;background:#1c1c26"></div>
-          <img data-src="${WORKER}${item.thumbPath}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:0.2s">
+          <img data-src="${WORKER}${item.thumbPath}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover">
           ${item.type === 'video' ? '<div class="play-overlay">▶️</div>' : ''}
           <div class="badge">${item.res === '4K' ? '4K' : (item.type === 'video' ? 'VIDEO' : 'HD')}</div>
           <div class="check" onclick="event.stopPropagation(); toggleSelect('${item.id}')">${selected.has(item.id) ? '✓' : ''}</div>
@@ -718,18 +625,18 @@
     });
   }
 
-  // ========== LAZY LOADING WITH AUTH (no 401) ==========
-  let lazyObserver = null;
-  function startLazyLoading() {
-    if (lazyObserver) lazyObserver.disconnect();
-    lazyObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        const img = entry.target;
+  // LOAD ALL THUMBNAILS IN PARALLEL (batched)
+  async function loadAllThumbnails() {
+    const images = [...document.querySelectorAll('#gallery img[data-src]')];
+    if (!images.length) return;
+    // load in batches of 10 to avoid overwhelming browser/network
+    const batchSize = 12;
+    for (let i = 0; i < images.length; i += batchSize) {
+      const batch = images.slice(i, i + batchSize);
+      await Promise.all(batch.map(img => {
         const src = img.dataset.src;
-        if (!src) return;
-        // Fetch with auth header, then set blob URL
-        fetch(src, { headers: authHeaders() })
+        if (!src || img.src) return Promise.resolve();
+        return fetch(src, { headers: authHeaders() })
           .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.blob();
@@ -737,23 +644,18 @@
           .then(blob => {
             const blobUrl = URL.createObjectURL(blob);
             img.src = blobUrl;
-            img.style.opacity = '1';
+            img.classList.add('loaded');
             img.onload = () => URL.revokeObjectURL(blobUrl);
-            // remove skeleton
-            const skeleton = img.parentElement?.querySelector('.thumb-skeleton');
-            if (skeleton) skeleton.remove();
           })
           .catch(err => {
-            console.warn('Thumb load error', src, err);
-            img.style.opacity = '0.3';
+            console.warn('Thumb error', src, err);
+            img.classList.add('loaded'); // show broken state
           });
-        lazyObserver.unobserve(img);
-      });
-    }, { rootMargin: '200px' });
-    document.querySelectorAll('#gallery img[data-src]').forEach(img => lazyObserver.observe(img));
+      }));
+    }
   }
 
-  // ========== LIGHTBOX (full-res with auth) ==========
+  // ========== LIGHTBOX: INSTANT LOAD (pre-fetch not needed, but we do direct blob fetch) ==========
   async function openLightbox(index) {
     currentLightboxIndex = index;
     const item = filteredItems[index];
@@ -766,10 +668,13 @@
     const mediaDiv = document.getElementById('lb-media');
     mediaDiv.innerHTML = '<div style="text-align:center">Loading...</div>';
     lb.classList.add('open');
-    // fetch full media with auth
     const mediaUrl = `${WORKER}${item.mediaPath}`;
     try {
       if (item.type === 'video') {
+        const resp = await fetch(mediaUrl, { headers: authHeaders() });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
         const video = document.createElement('video');
         video.controls = true;
         video.autoplay = true;
@@ -777,29 +682,25 @@
         video.style.maxWidth = '92vw';
         video.style.maxHeight = '80vh';
         video.style.borderRadius = '16px';
-        const resp = await fetch(mediaUrl, { headers: authHeaders() });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const blob = await resp.blob();
-        const blobUrl = URL.createObjectURL(blob);
         video.src = blobUrl;
         video.onended = () => URL.revokeObjectURL(blobUrl);
         mediaDiv.innerHTML = '';
         mediaDiv.appendChild(video);
         video.play().catch(e => console.log('autoplay blocked'));
       } else {
-        const img = document.createElement('img');
-        img.style.maxWidth = '92vw';
-        img.style.maxHeight = '80vh';
         const resp = await fetch(mediaUrl, { headers: authHeaders() });
         const blob = await resp.blob();
         const blobUrl = URL.createObjectURL(blob);
+        const img = document.createElement('img');
         img.src = blobUrl;
+        img.style.maxWidth = '92vw';
+        img.style.maxHeight = '80vh';
         img.onload = () => URL.revokeObjectURL(blobUrl);
         mediaDiv.innerHTML = '';
         mediaDiv.appendChild(img);
       }
     } catch (err) {
-      mediaDiv.innerHTML = `<div style="color:#e05555">Failed to load media: ${err.message}</div>`;
+      mediaDiv.innerHTML = `<div style="color:#e05555">Failed to load: ${err.message}</div>`;
     }
     updateNavButtons();
   }
@@ -864,11 +765,14 @@
     } else {
       bar.classList.remove('show');
     }
+    // re-load thumbnails for new cards (since render replaced DOM)
+    loadAllThumbnails();
   }
   function clearSelection() {
     selected.clear();
     render();
     document.getElementById('selection-bar').classList.remove('show');
+    loadAllThumbnails();
   }
 
   // ========== UI CONTROLS ==========
@@ -877,7 +781,7 @@
     document.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
     document.querySelector(`.chip[data-filter="${type}"]`).classList.add('active');
     render();
-    startLazyLoading();
+    loadAllThumbnails();
   }
   function setView(view) {
     currentView = view;
@@ -885,7 +789,7 @@
     if (view === 'grid') document.querySelector('.view-btn:first-child').classList.add('active');
     else document.querySelector('.view-btn:last-child').classList.add('active');
     render();
-    startLazyLoading();
+    loadAllThumbnails();
   }
 
   // ========== INIT ==========
