@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hamzax Gallery – Instant</title>
-  <!-- Preconnect to worker and CDN for faster connections -->
+  <title>Hamzax Gallery – Instant Streaming</title>
   <link rel="preconnect" href="https://gentle-bread-3cb2.jhaji1223.workers.dev">
   <link rel="preconnect" href="https://gallery.hamzaxdevelopers.dpdns.org">
   <style>
@@ -14,7 +13,6 @@
       color: #f0ede8;
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     }
-    /* Login screen */
     #login-screen {
       display: flex;
       align-items: center;
@@ -30,11 +28,9 @@
       width: 100%;
       max-width: 440px;
       text-align: center;
-      backdrop-filter: blur(4px);
-      box-shadow: 0 24px 48px rgba(0,0,0,0.5);
     }
     .lock-icon { font-size: 48px; margin-bottom: 20px; }
-    h1 { font-size: 28px; font-weight: 500; letter-spacing: -0.5px; color: #c9a96e; }
+    h1 { font-size: 28px; font-weight: 500; color: #c9a96e; }
     h1 span { color: #f0ede8; }
     .sub { margin: 12px 0 32px; color: #7a7a8c; font-size: 14px; }
     .input-group { position: relative; margin-bottom: 20px; }
@@ -74,7 +70,6 @@
     button:hover { background: #d4b37a; transform: translateY(-1px); }
     .error { color: #e05555; font-size: 13px; margin-top: 12px; display: none; }
     .error.show { display: block; }
-    /* App shell */
     #app { display: none; }
     header {
       display: flex;
@@ -107,7 +102,7 @@
       padding: 6px 14px;
       font-size: 13px;
     }
-    .logout-btn:hover { border-color: #e05555; color: #e05555; background: transparent; }
+    .logout-btn:hover { border-color: #e05555; color: #e05555; }
     .stats-bar {
       display: flex;
       border-bottom: 1px solid #2a2a38;
@@ -134,6 +129,7 @@
       border-radius: 40px;
       font-size: 13px;
       width: auto;
+      cursor: pointer;
     }
     .chip.active { background: rgba(201,169,110,0.15); border-color: #c9a96e; color: #c9a96e; }
     .search-box { position: relative; }
@@ -158,9 +154,9 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
     }
     .view-btn.active { border-color: #c9a96e; color: #c9a96e; }
-    /* Gallery grid */
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -189,9 +185,7 @@
       height: 100%;
       object-fit: cover;
       transition: 0.2s;
-      opacity: 0;
     }
-    .thumb img.loaded { opacity: 1; }
     .play-overlay {
       position: absolute;
       inset: 0;
@@ -259,7 +253,6 @@
       border-color: rgba(201,169,110,0.3);
       color: #c9a96e;
     }
-    /* Lightbox */
     #lightbox {
       position: fixed;
       inset: 0;
@@ -435,11 +428,9 @@
   let selected = new Set();
   let currentFilter = 'all';
   let currentView = 'grid';
-  let searchTerm = '';
   let currentLightboxIndex = 0;
   let sessionInterval = null;
 
-  // ========== HELPERS ==========
   function authHeaders() {
     return { 'Authorization': `Bearer ${sessionToken}` };
   }
@@ -465,7 +456,6 @@
     bar.classList.toggle('show', show);
   }
 
-  // ========== SESSION ==========
   function saveSession(token, expiryMs) {
     sessionToken = token;
     sessionExpiry = Date.now() + expiryMs * 1000;
@@ -501,7 +491,6 @@
     if (sessionInterval) clearInterval(sessionInterval);
   }
 
-  // ========== LOGIN ==========
   async function login() {
     const pw = document.getElementById('password').value;
     const btn = document.getElementById('login-btn');
@@ -535,19 +524,15 @@
     inp.type = inp.type === 'password' ? 'text' : 'password';
   }
 
-  // ========== LOAD MEDIA WITH CACHE ==========
   async function loadMedia() {
     const cacheKey = 'gallery_filelist';
     const cached = sessionStorage.getItem(cacheKey);
-    // Cache for 1 hour
     if (cached && Date.now() - JSON.parse(cached).timestamp < 3600000) {
       allItems = JSON.parse(cached).items;
       updateStats();
       render();
-      loadAllThumbnails();  // preload all thumbnails immediately
       return;
     }
-    // fresh fetch
     const galleryDiv = document.getElementById('gallery');
     galleryDiv.innerHTML = '<div style="text-align:center;padding:60px">Loading gallery...</div>';
     try {
@@ -559,7 +544,6 @@
       sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), items: allItems }));
       updateStats();
       render();
-      loadAllThumbnails();  // preload all thumbnails immediately
     } catch (err) {
       galleryDiv.innerHTML = `<div style="text-align:center;padding:60px;color:#e05555">Failed to load: ${err.message}</div>`;
     }
@@ -575,7 +559,6 @@
     document.getElementById('stat-size').innerText = fmtSize(totalSize);
   }
 
-  // ========== RENDER & PRELOAD ALL THUMBNAILS ==========
   function getFiltered() {
     const searchLower = document.getElementById('search').value.toLowerCase();
     return allItems.filter(item => {
@@ -598,8 +581,8 @@
     }
     gallery.innerHTML = filteredItems.map((item, idx) => `
       <div class="card ${selected.has(item.id) ? 'sel' : ''}" data-id="${item.id}" data-index="${idx}">
-        <div class="thumb" data-idx="${idx}">
-          <img data-src="${WORKER}${item.thumbPath}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover">
+        <div class="thumb">
+          <img src="${item.thumbPath}" alt="${item.name}" loading="lazy" style="width:100%;height:100%;object-fit:cover">
           ${item.type === 'video' ? '<div class="play-overlay">▶️</div>' : ''}
           <div class="badge">${item.res === '4K' ? '4K' : (item.type === 'video' ? 'VIDEO' : 'HD')}</div>
           <div class="check" onclick="event.stopPropagation(); toggleSelect('${item.id}')">${selected.has(item.id) ? '✓' : ''}</div>
@@ -625,37 +608,7 @@
     });
   }
 
-  // LOAD ALL THUMBNAILS IN PARALLEL (batched)
-  async function loadAllThumbnails() {
-    const images = [...document.querySelectorAll('#gallery img[data-src]')];
-    if (!images.length) return;
-    // load in batches of 10 to avoid overwhelming browser/network
-    const batchSize = 12;
-    for (let i = 0; i < images.length; i += batchSize) {
-      const batch = images.slice(i, i + batchSize);
-      await Promise.all(batch.map(img => {
-        const src = img.dataset.src;
-        if (!src || img.src) return Promise.resolve();
-        return fetch(src, { headers: authHeaders() })
-          .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.blob();
-          })
-          .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            img.src = blobUrl;
-            img.classList.add('loaded');
-            img.onload = () => URL.revokeObjectURL(blobUrl);
-          })
-          .catch(err => {
-            console.warn('Thumb error', src, err);
-            img.classList.add('loaded'); // show broken state
-          });
-      }));
-    }
-  }
-
-  // ========== LIGHTBOX: INSTANT LOAD (pre-fetch not needed, but we do direct blob fetch) ==========
+  // ========== LIGHTBOX: DIRECT CDN STREAMING (INSTANT PLAY) ==========
   async function openLightbox(index) {
     currentLightboxIndex = index;
     const item = filteredItems[index];
@@ -668,13 +621,11 @@
     const mediaDiv = document.getElementById('lb-media');
     mediaDiv.innerHTML = '<div style="text-align:center">Loading...</div>';
     lb.classList.add('open');
-    const mediaUrl = `${WORKER}${item.mediaPath}`;
+
+    const mediaUrl = item.mediaPath; // direct CDN URL
     try {
       if (item.type === 'video') {
-        const resp = await fetch(mediaUrl, { headers: authHeaders() });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const blob = await resp.blob();
-        const blobUrl = URL.createObjectURL(blob);
+        // Use native video element with direct URL – supports range requests, instant start
         const video = document.createElement('video');
         video.controls = true;
         video.autoplay = true;
@@ -682,20 +633,17 @@
         video.style.maxWidth = '92vw';
         video.style.maxHeight = '80vh';
         video.style.borderRadius = '16px';
-        video.src = blobUrl;
-        video.onended = () => URL.revokeObjectURL(blobUrl);
+        video.src = mediaUrl;
+        video.onerror = () => { mediaDiv.innerHTML = '<div style="color:#e05555">Video failed to load</div>'; };
         mediaDiv.innerHTML = '';
         mediaDiv.appendChild(video);
         video.play().catch(e => console.log('autoplay blocked'));
       } else {
-        const resp = await fetch(mediaUrl, { headers: authHeaders() });
-        const blob = await resp.blob();
-        const blobUrl = URL.createObjectURL(blob);
         const img = document.createElement('img');
-        img.src = blobUrl;
+        img.src = mediaUrl;
         img.style.maxWidth = '92vw';
         img.style.maxHeight = '80vh';
-        img.onload = () => URL.revokeObjectURL(blobUrl);
+        img.onerror = () => { mediaDiv.innerHTML = '<div style="color:#e05555">Image failed to load</div>'; };
         mediaDiv.innerHTML = '';
         mediaDiv.appendChild(img);
       }
@@ -727,15 +675,12 @@
     if (!item) return;
     showDownloadBar(true);
     try {
-      const res = await fetch(`${WORKER}${item.dlPath}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
+      // Direct CDN download
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      a.href = item.mediaPath;
       a.download = item.filename;
       a.click();
-      URL.revokeObjectURL(a.href);
-      showToast(`Downloaded ${item.name}`);
+      showToast(`Download started: ${item.name}`);
     } catch (err) {
       showToast(`Download failed: ${err.message}`, true);
     } finally {
@@ -765,23 +710,18 @@
     } else {
       bar.classList.remove('show');
     }
-    // re-load thumbnails for new cards (since render replaced DOM)
-    loadAllThumbnails();
   }
   function clearSelection() {
     selected.clear();
     render();
     document.getElementById('selection-bar').classList.remove('show');
-    loadAllThumbnails();
   }
 
-  // ========== UI CONTROLS ==========
   function setFilter(type) {
     currentFilter = type;
     document.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
     document.querySelector(`.chip[data-filter="${type}"]`).classList.add('active');
     render();
-    loadAllThumbnails();
   }
   function setView(view) {
     currentView = view;
@@ -789,10 +729,8 @@
     if (view === 'grid') document.querySelector('.view-btn:first-child').classList.add('active');
     else document.querySelector('.view-btn:last-child').classList.add('active');
     render();
-    loadAllThumbnails();
   }
 
-  // ========== INIT ==========
   (function init() {
     if (getStoredSession()) {
       document.getElementById('login-screen').style.display = 'none';
