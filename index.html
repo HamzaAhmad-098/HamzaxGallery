@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hamzax Gallery – Instant</title>
+  <title>Hamzax Gallery – Ultra Fast</title>
   <!-- Preconnect to worker and CDN for faster connections -->
   <link rel="preconnect" href="https://gentle-bread-3cb2.jhaji1223.workers.dev">
   <link rel="preconnect" href="https://gallery.hamzaxdevelopers.dpdns.org">
@@ -189,9 +189,7 @@
       height: 100%;
       object-fit: cover;
       transition: 0.2s;
-      opacity: 0;
     }
-    .thumb img.loaded { opacity: 1; }
     .play-overlay {
       position: absolute;
       inset: 0;
@@ -444,6 +442,12 @@
     return { 'Authorization': `Bearer ${sessionToken}` };
   }
 
+  // Append token to URL for media elements (browsers can't set custom headers)
+  function urlWithToken(baseUrl) {
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}auth=${encodeURIComponent(sessionToken)}`;
+  }
+
   function fmtSize(bytes) {
     if (!bytes) return '0 B';
     if (bytes < 1024) return bytes + ' B';
@@ -537,14 +541,13 @@
 
   // ========== LOAD MEDIA WITH CACHE ==========
   async function loadMedia() {
-    const cacheKey = 'gallery_filelist';
+    const cacheKey = 'gallery_filelist_v2';
     const cached = sessionStorage.getItem(cacheKey);
     // Cache for 1 hour
     if (cached && Date.now() - JSON.parse(cached).timestamp < 3600000) {
       allItems = JSON.parse(cached).items;
       updateStats();
       render();
-      loadAllThumbnails();  // preload all thumbnails immediately
       return;
     }
     // fresh fetch
@@ -559,7 +562,6 @@
       sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), items: allItems }));
       updateStats();
       render();
-      loadAllThumbnails();  // preload all thumbnails immediately
     } catch (err) {
       galleryDiv.innerHTML = `<div style="text-align:center;padding:60px;color:#e05555">Failed to load: ${err.message}</div>`;
     }
@@ -575,7 +577,7 @@
     document.getElementById('stat-size').innerText = fmtSize(totalSize);
   }
 
-  // ========== RENDER & PRELOAD ALL THUMBNAILS ==========
+  // ========== RENDER WITH NATIVE LAZY LOADING ==========
   function getFiltered() {
     const searchLower = document.getElementById('search').value.toLowerCase();
     return allItems.filter(item => {
@@ -596,10 +598,22 @@
       gallery.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px">No files found</div>';
       return;
     }
-    gallery.innerHTML = filteredItems.map((item, idx) => `
+    // Build HTML with direct img src (no blob fetch) and native lazy loading
+    gallery.innerHTML = filteredItems.map((item, idx) => {
+      const thumbUrl = urlWithToken(`${WORKER}${item.thumbPath}`);
+      // Add fetchpriority high for first 6 images
+      const fetchPriority = idx < 6 ? 'high' : 'auto';
+      return `
       <div class="card ${selected.has(item.id) ? 'sel' : ''}" data-id="${item.id}" data-index="${idx}">
-        <div class="thumb" data-idx="${idx}">
-          <img data-src="${WORKER}${item.thumbPath}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover">
+        <div class="thumb">
+          <img 
+            src="${thumbUrl}" 
+            alt="${escapeHtml(item.name)}"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="${fetchPriority}"
+            style="width:100%;height:100%;object-fit:cover"
+          >
           ${item.type === 'video' ? '<div class="play-overlay">▶️</div>' : ''}
           <div class="badge">${item.res === '4K' ? '4K' : (item.type === 'video' ? 'VIDEO' : 'HD')}</div>
           <div class="check" onclick="event.stopPropagation(); toggleSelect('${item.id}')">${selected.has(item.id) ? '✓' : ''}</div>
@@ -613,7 +627,7 @@
           </div>
         </div>
       </div>
-    `).join('');
+    `}).join('');
   }
 
   function escapeHtml(str) {
@@ -625,38 +639,8 @@
     });
   }
 
-  // LOAD ALL THUMBNAILS IN PARALLEL (batched)
-  async function loadAllThumbnails() {
-    const images = [...document.querySelectorAll('#gallery img[data-src]')];
-    if (!images.length) return;
-    // load in batches of 10 to avoid overwhelming browser/network
-    const batchSize = 12;
-    for (let i = 0; i < images.length; i += batchSize) {
-      const batch = images.slice(i, i + batchSize);
-      await Promise.all(batch.map(img => {
-        const src = img.dataset.src;
-        if (!src || img.src) return Promise.resolve();
-        return fetch(src, { headers: authHeaders() })
-          .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.blob();
-          })
-          .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            img.src = blobUrl;
-            img.classList.add('loaded');
-            img.onload = () => URL.revokeObjectURL(blobUrl);
-          })
-          .catch(err => {
-            console.warn('Thumb error', src, err);
-            img.classList.add('loaded'); // show broken state
-          });
-      }));
-    }
-  }
-
-  // ========== LIGHTBOX: INSTANT LOAD (pre-fetch not needed, but we do direct blob fetch) ==========
-  async function openLightbox(index) {
+  // ========== LIGHTBOX: DIRECT STREAMING (NO BLOB FETCH) ==========
+  function openLightbox(index) {
     currentLightboxIndex = index;
     const item = filteredItems[index];
     if (!item) return;
@@ -668,46 +652,38 @@
     const mediaDiv = document.getElementById('lb-media');
     mediaDiv.innerHTML = '<div style="text-align:center">Loading...</div>';
     lb.classList.add('open');
-    const mediaUrl = `${WORKER}${item.mediaPath}`;
-    try {
-      if (item.type === 'video') {
-        const resp = await fetch(mediaUrl, { headers: authHeaders() });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const blob = await resp.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const video = document.createElement('video');
-        video.controls = true;
-        video.autoplay = true;
-        video.playsInline = true;
-        video.style.maxWidth = '92vw';
-        video.style.maxHeight = '80vh';
-        video.style.borderRadius = '16px';
-        video.src = blobUrl;
-        video.onended = () => URL.revokeObjectURL(blobUrl);
-        mediaDiv.innerHTML = '';
-        mediaDiv.appendChild(video);
-        video.play().catch(e => console.log('autoplay blocked'));
-      } else {
-        const resp = await fetch(mediaUrl, { headers: authHeaders() });
-        const blob = await resp.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const img = document.createElement('img');
-        img.src = blobUrl;
-        img.style.maxWidth = '92vw';
-        img.style.maxHeight = '80vh';
-        img.onload = () => URL.revokeObjectURL(blobUrl);
-        mediaDiv.innerHTML = '';
-        mediaDiv.appendChild(img);
-      }
-    } catch (err) {
-      mediaDiv.innerHTML = `<div style="color:#e05555">Failed to load: ${err.message}</div>`;
+    const mediaUrl = urlWithToken(`${WORKER}${item.mediaPath}`);
+    
+    if (item.type === 'video') {
+      const video = document.createElement('video');
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      video.preload = 'metadata'; // Critical: only load metadata, not entire video
+      video.style.maxWidth = '92vw';
+      video.style.maxHeight = '80vh';
+      video.style.borderRadius = '16px';
+      video.src = mediaUrl;
+      mediaDiv.innerHTML = '';
+      mediaDiv.appendChild(video);
+      video.play().catch(e => console.log('autoplay blocked:', e));
+    } else {
+      const img = document.createElement('img');
+      img.src = mediaUrl;
+      img.style.maxWidth = '92vw';
+      img.style.maxHeight = '80vh';
+      img.alt = item.name;
+      mediaDiv.innerHTML = '';
+      mediaDiv.appendChild(img);
     }
     updateNavButtons();
   }
 
   function closeLightbox() {
+    const mediaDiv = document.getElementById('lb-media');
+    // Clean up video element to stop any pending downloads
+    mediaDiv.innerHTML = '';
     document.getElementById('lightbox').classList.remove('open');
-    document.getElementById('lb-media').innerHTML = '';
   }
 
   function prevMedia() {
@@ -721,7 +697,7 @@
     document.getElementById('lb-next').style.display = currentLightboxIndex < filteredItems.length-1 ? 'flex' : 'none';
   }
 
-  // ========== DOWNLOAD ==========
+  // ========== DOWNLOAD (uses fetch with auth header) ==========
   async function downloadItem(id) {
     const item = allItems.find(i => i.id === id);
     if (!item) return;
@@ -746,7 +722,7 @@
   async function downloadSelected() {
     for (let id of selected) {
       await downloadItem(id);
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 300));
     }
     clearSelection();
   }
@@ -765,14 +741,11 @@
     } else {
       bar.classList.remove('show');
     }
-    // re-load thumbnails for new cards (since render replaced DOM)
-    loadAllThumbnails();
   }
   function clearSelection() {
     selected.clear();
     render();
     document.getElementById('selection-bar').classList.remove('show');
-    loadAllThumbnails();
   }
 
   // ========== UI CONTROLS ==========
@@ -781,7 +754,6 @@
     document.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
     document.querySelector(`.chip[data-filter="${type}"]`).classList.add('active');
     render();
-    loadAllThumbnails();
   }
   function setView(view) {
     currentView = view;
@@ -789,7 +761,6 @@
     if (view === 'grid') document.querySelector('.view-btn:first-child').classList.add('active');
     else document.querySelector('.view-btn:last-child').classList.add('active');
     render();
-    loadAllThumbnails();
   }
 
   // ========== INIT ==========
