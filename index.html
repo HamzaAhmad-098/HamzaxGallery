@@ -1,844 +1,901 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Hamzax Family Gallery</title>
-<!--
-  SECURITY NOTICE:
-  ✅ No password stored here
-  ✅ No Worker URL stored here
-  ✅ No B2 bucket info stored here
-  ✅ All auth handled by Cloudflare Worker
-  ✅ Session tokens are HMAC-SHA256 signed — cannot be forged
--->
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--border:#2a2a38;
-  --accent:#c9a96e;--accent2:#7c6fcd;--text:#f0ede8;--muted:#7a7a8c;
-  --danger:#e05555;--success:#4caf7d;--r:12px;
-}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
-
-/* ── LOGIN ── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:radial-gradient(ellipse at 50% 0%,rgba(201,169,110,0.06) 0%,transparent 70%)}
-.login-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:52px 44px;width:100%;max-width:420px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.5)}
-.login-logo{font-family:'Playfair Display',serif;font-size:30px;color:var(--accent);margin-bottom:6px;letter-spacing:-.02em}
-.login-logo span{color:var(--text);font-weight:400}
-.login-sub{font-size:13px;color:var(--muted);margin-bottom:36px;line-height:1.7}
-.login-lock{width:64px;height:64px;margin:0 auto 28px;background:rgba(201,169,110,0.08);border:1px solid rgba(201,169,110,0.2);border-radius:18px;display:flex;align-items:center;justify-content:center}
-.login-lock svg{width:28px;height:28px;color:var(--accent)}
-.input-wrap{position:relative;margin-bottom:14px}
-.login-input{width:100%;padding:14px 48px 14px 18px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;outline:none;transition:border .2s,box-shadow .2s;letter-spacing:.08em}
-.login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(201,169,110,0.1)}
-.login-input::placeholder{letter-spacing:0;color:var(--muted);font-size:14px}
-.eye-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;display:flex;align-items:center}
-.eye-btn svg{width:18px;height:18px}
-.login-btn{width:100%;padding:14px;border-radius:12px;background:var(--accent);color:#0a0a0f;border:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.02em}
-.login-btn:hover{background:#d4b37a;transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,169,110,0.3)}
-.login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
-.login-error{margin-top:12px;font-size:13px;color:var(--danger);display:none;padding:10px;background:rgba(224,85,85,0.08);border-radius:8px;border:1px solid rgba(224,85,85,0.2)}
-.login-error.show{display:block}
-.login-footer{margin-top:24px;font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
-.login-footer svg{width:12px;height:12px}
-
-/* ── APP ── */
-#app{display:none}
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:12px}
-.logo{font-family:'Playfair Display',serif;font-size:20px;color:var(--accent)}
-.logo span{color:var(--text);font-weight:400}
-.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.session-badge{font-size:11px;color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:20px}
-.nav-tabs{display:flex;gap:3px;background:var(--surface2);border-radius:10px;padding:3px}
-.nav-tab{padding:7px 18px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all .2s}
-.nav-tab.active{background:var(--accent);color:#0a0a0f;font-weight:500}
-.logout-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s}
-.logout-btn:hover{border-color:var(--danger);color:var(--danger)}
-
-/* ── STATS ── */
-.stats-bar{display:flex;border-bottom:1px solid var(--border);background:var(--surface)}
-.stat{flex:1;padding:14px 20px;text-align:center;border-right:1px solid var(--border)}
-.stat:last-child{border-right:none}
-.stat-val{display:block;font-size:20px;font-weight:600;color:var(--accent);font-family:'Playfair Display',serif}
-.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-
-/* ── TOOLBAR ── */
-.toolbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
-.filter-chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap}
-.chip.active{background:rgba(201,169,110,0.12);border-color:var(--accent);color:var(--accent)}
-.toolbar-right{display:flex;align-items:center;gap:10px}
-.search-wrap{position:relative}
-.search-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 14px 8px 36px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:200px;transition:border .2s}
-.search-input:focus{border-color:var(--accent)}
-.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
-.search-icon svg{width:16px;height:16px}
-.view-btns{display:flex;gap:4px}
-.view-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.view-btn.active{background:rgba(201,169,110,0.1);border-color:var(--accent);color:var(--accent)}
-.view-btn svg{width:16px;height:16px}
-
-/* ── GALLERY GRID ── */
-.gallery-wrap{padding:24px 28px}
-.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
-.gallery-grid.list-view{grid-template-columns:1fr}
-
-/* ── CARDS ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;position:relative}
-.card:hover{transform:translateY(-2px);border-color:#3a3a4a;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-.card.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(201,169,110,0.3)}
-.thumb-wrap{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--surface2)}
-.thumb-wrap img{width:100%;height:100%;object-fit:cover;transition:opacity .3s,transform .4s;opacity:0}
-.thumb-wrap img.loaded{opacity:1}
-.thumb-wrap:hover img{transform:scale(1.04)}
-.thumb-skeleton{position:absolute;inset:0;background:linear-gradient(90deg,var(--surface2) 25%,var(--surface) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.thumb-wrap img.loaded ~ .thumb-skeleton{display:none}
-.play-over{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3)}
-.play-over svg{width:44px;height:44px;color:rgba(255,255,255,.9);filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
-.type-badge{position:absolute;top:10px;right:10px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-.type-badge.vid{background:rgba(124,111,205,0.85);color:#fff}
-.type-badge.fourtk{background:rgba(201,169,110,0.9);color:#0a0a0f}
-.chk{position:absolute;top:10px;left:10px;width:24px;height:24px;border-radius:6px;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
-.card.sel .chk{background:var(--accent);border-color:var(--accent)}
-.chk svg{width:12px;height:12px;color:#0a0a0f}
-.card-info{padding:14px}
-.card-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
-.card-meta{display:flex;gap:8px;font-size:11px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
-.card-actions{display:flex;gap:8px}
-.ca-btn{flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:4px}
-.ca-btn:hover{border-color:#3a3a4a;color:var(--text)}
-.ca-btn.primary{background:rgba(201,169,110,0.1);border-color:rgba(201,169,110,0.3);color:var(--accent)}
-.ca-btn.primary:hover{background:rgba(201,169,110,0.2)}
-.ca-btn svg{width:12px;height:12px}
-
-/* ── LIST VIEW ── */
-.gallery-grid.list-view .card{display:flex;align-items:center;gap:16px}
-.gallery-grid.list-view .thumb-wrap{width:80px;height:60px;aspect-ratio:unset;flex-shrink:0;border-radius:8px}
-.gallery-grid.list-view .card-info{flex:1;display:flex;align-items:center;gap:16px;padding:12px 16px 12px 0}
-.gallery-grid.list-view .card-name{flex:1;margin:0}
-.gallery-grid.list-view .card-meta{margin:0}
-.gallery-grid.list-view .card-actions{margin-left:auto}
-.gallery-grid.list-view .play-over svg{width:24px;height:24px}
-.gallery-grid.list-view .chk{top:50%;left:8px;transform:translateY(-50%)}
-
-/* ── SELECTION BAR ── */
-.sel-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 20px;display:flex;align-items:center;gap:16px;box-shadow:0 16px 48px rgba(0,0,0,.6);transition:transform .3s;z-index:200;white-space:nowrap}
-.sel-bar.on{transform:translateX(-50%) translateY(0)}
-.sel-n{font-size:14px;font-weight:500}
-.sel-btns{display:flex;gap:8px}
-.sel-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s}
-.sel-btn.primary{background:var(--accent);border-color:var(--accent);color:#0a0a0f;font-weight:500}
-.sel-btn:hover{border-color:#3a3a4a}
-
-/* ── LIGHTBOX ── */
-#lb{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.96);display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s}
-#lb.open{opacity:1;pointer-events:all}
-.lb-top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;flex-shrink:0}
-.lb-title-area{display:flex;flex-direction:column;gap:3px}
-.lb-name{font-size:16px;font-weight:500}
-.lb-meta{font-size:12px;color:var(--muted)}
-.lb-quality{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:rgba(201,169,110,0.1);border:1px solid rgba(201,169,110,0.2);font-size:11px;color:var(--accent);font-weight:500}
-.lb-quality svg{width:12px;height:12px}
-.lb-actions{display:flex;gap:10px}
-.lb-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
-.lb-btn.primary{background:var(--accent);border-color:var(--accent);color:#0a0a0f;font-weight:500}
-.lb-btn svg{width:14px;height:14px}
-.lb-close{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.lb-close:hover{border-color:var(--danger);color:var(--danger)}
-.lb-close svg{width:18px;height:18px}
-.lb-media-area{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-#lb-media-wrap{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
-.lb-arrow{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:2}
-.lb-arrow:hover{background:rgba(255,255,255,.16)}
-.lb-arrow svg{width:20px;height:20px}
-#lb-prev{left:20px}
-#lb-next{right:20px}
-.lb-bottom{padding:16px 24px;flex-shrink:0;display:flex;justify-content:center}
-.lb-dots{display:flex;gap:6px;align-items:center}
-.lb-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:all .2s}
-.lb-dot.active{background:var(--accent);width:18px;border-radius:3px}
-
-/* ── LOADING / EMPTY ── */
-.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:20px;color:var(--muted)}
-.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:80px 20px;color:var(--muted)}
-.empty-icon{font-size:48px;margin-bottom:12px;opacity:.4}
-.empty-title{font-size:16px;font-weight:500;margin-bottom:6px;color:var(--text)}
-.empty-sub{font-size:13px}
-
-/* ── DOWNLOAD BAR ── */
-.dl-bar{position:fixed;top:0;left:0;right:0;background:var(--accent);color:#0a0a0f;padding:10px 24px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;z-index:400;transform:translateY(-100%);transition:transform .3s}
-.dl-bar.show{transform:translateY(0)}
-.dl-spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,.2);border-top-color:#0a0a0f;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-
-/* ── TOAST ── */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:500;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px}
-.toast.show{transform:translateY(0);opacity:1}
-.toast.err .toast-icon-wrap{color:var(--danger)}
-.toast.ok .toast-icon-wrap{color:var(--success)}
-.toast-icon-wrap svg{width:18px;height:18px;flex-shrink:0}
-
-@media(max-width:600px){
-  header{padding:12px 16px}
-  .gallery-wrap{padding:16px}
-  .toolbar{padding:10px 16px}
-  .stats-bar{display:none}
-  .gallery-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
-  .login-card{padding:36px 24px}
-  .lb-top{padding:12px 16px;flex-wrap:wrap;gap:8px}
-  .lb-actions{order:3;width:100%}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hamzax Family Gallery</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0a0a0f;
+      color: #f0ede8;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    /* Login screen */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(circle at 20% 30%, #1a1a24, #0a0a0f);
+    }
+    .login-card {
+      background: #13131a;
+      border: 1px solid #2a2a38;
+      border-radius: 32px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.5);
+    }
+    .lock-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 24px;
+      background: rgba(201,169,110,0.08);
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: -0.5px;
+      color: #c9a96e;
+    }
+    h1 span {
+      color: #f0ede8;
+    }
+    .sub {
+      margin: 12px 0 32px;
+      color: #7a7a8c;
+      font-size: 14px;
+    }
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 14px 18px;
+      background: #1c1c26;
+      border: 1px solid #2a2a38;
+      border-radius: 16px;
+      color: white;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      outline: none;
+      transition: 0.2s;
+    }
+    input:focus {
+      border-color: #c9a96e;
+      box-shadow: 0 0 0 3px rgba(201,169,110,0.1);
+    }
+    .toggle-pw {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #7a7a8c;
+      cursor: pointer;
+    }
+    button {
+      background: #c9a96e;
+      color: #0a0a0f;
+      border: none;
+      padding: 14px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #d4b37a;
+      transform: translateY(-1px);
+    }
+    .error {
+      color: #e05555;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+    .error.show {
+      display: block;
+    }
+    /* App shell */
+    #app {
+      display: none;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 28px;
+      border-bottom: 1px solid #2a2a38;
+      background: #13131a;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .logo {
+      font-size: 22px;
+      font-weight: 500;
+      color: #c9a96e;
+    }
+    .logo span {
+      color: white;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .session-badge {
+      background: #1c1c26;
+      padding: 6px 12px;
+      border-radius: 40px;
+      font-size: 12px;
+      color: #7a7a8c;
+    }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid #2a2a38;
+      color: #7a7a8c;
+      width: auto;
+      padding: 6px 14px;
+      font-size: 13px;
+    }
+    .logout-btn:hover {
+      border-color: #e05555;
+      color: #e05555;
+      background: transparent;
+      transform: none;
+    }
+    .stats-bar {
+      display: flex;
+      border-bottom: 1px solid #2a2a38;
+      background: #13131a;
+    }
+    .stat {
+      flex: 1;
+      text-align: center;
+      padding: 12px;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #c9a96e;
+    }
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #7a7a8c;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 16px 28px;
+      border-bottom: 1px solid #2a2a38;
+    }
+    .filters {
+      display: flex;
+      gap: 8px;
+    }
+    .chip {
+      background: transparent;
+      border: 1px solid #2a2a38;
+      color: #7a7a8c;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 13px;
+      width: auto;
+    }
+    .chip.active {
+      background: rgba(201,169,110,0.15);
+      border-color: #c9a96e;
+      color: #c9a96e;
+    }
+    .search-box {
+      position: relative;
+    }
+    .search-box input {
+      padding: 8px 14px 8px 36px;
+      width: 220px;
+      background: #1c1c26;
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #7a7a8c;
+      pointer-events: none;
+    }
+    .view-toggle {
+      display: flex;
+      gap: 6px;
+    }
+    .view-btn {
+      background: #1c1c26;
+      border: 1px solid #2a2a38;
+      width: 36px;
+      padding: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .view-btn.active {
+      border-color: #c9a96e;
+      color: #c9a96e;
+    }
+    /* Gallery grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+      padding: 28px;
+    }
+    .gallery-grid.list-view {
+      grid-template-columns: 1fr;
+    }
+    .card {
+      background: #13131a;
+      border: 1px solid #2a2a38;
+      border-radius: 20px;
+      overflow: hidden;
+      transition: 0.2s;
+      cursor: pointer;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: #3a3a4a;
+    }
+    .card.sel {
+      border-color: #c9a96e;
+      box-shadow: 0 0 0 2px rgba(201,169,110,0.3);
+    }
+    .thumb {
+      position: relative;
+      aspect-ratio: 16/9;
+      background: #1c1c26;
+      overflow: hidden;
+    }
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: 0.3s;
+    }
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.3);
+    }
+    .badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .check {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 26px;
+      height: 26px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .card.sel .check {
+      background: #c9a96e;
+      color: black;
+    }
+    .info {
+      padding: 14px;
+    }
+    .filename {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    .meta {
+      font-size: 11px;
+      color: #7a7a8c;
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-sm {
+      background: #1c1c26;
+      border: 1px solid #2a2a38;
+      padding: 6px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      width: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-sm.primary {
+      background: rgba(201,169,110,0.1);
+      border-color: rgba(201,169,110,0.3);
+      color: #c9a96e;
+    }
+    /* Lightbox */
+    #lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.96);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+    }
+    #lightbox.open {
+      display: flex;
+    }
+    .lb-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid #2a2a38;
+    }
+    .lb-media {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lb-media video, .lb-media img {
+      max-width: 92vw;
+      max-height: 80vh;
+      border-radius: 16px;
+    }
+    .lb-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 28px;
+    }
+    #lb-prev { left: 20px; }
+    #lb-next { right: 20px; }
+    .selection-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #13131a;
+      border: 1px solid #2a2a38;
+      border-radius: 60px;
+      padding: 10px 20px;
+      display: flex;
+      gap: 16px;
+      z-index: 200;
+      display: none;
+    }
+    .selection-bar.show {
+      display: flex;
+    }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #1c1c26;
+      border: 1px solid #2a2a38;
+      border-radius: 12px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 300;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: 0.2s;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .dl-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #c9a96e;
+      color: black;
+      padding: 12px;
+      text-align: center;
+      z-index: 400;
+      transform: translateY(-100%);
+      transition: 0.2s;
+    }
+    .dl-bar.show {
+      transform: translateY(0);
+    }
+    @media (max-width: 640px) {
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; padding: 16px; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════
-     LOGIN SCREEN
-════════════════════════════════════ -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-lock">
-      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
-      </svg>
+    <div class="lock-icon">🔒</div>
+    <h1>Hamzax <span>Gallery</span></h1>
+    <div class="sub">Private family gallery — password protected</div>
+    <div class="input-group">
+      <input type="password" id="password" placeholder="Enter password" autocomplete="off">
+      <button class="toggle-pw" onclick="togglePassword()">👁️</button>
     </div>
-    <div class="login-logo">Hamzax <span>Gallery</span></div>
-    <div class="login-sub">Private family gallery — authorised access only.<br/>Enter the password to continue.</div>
-    <div class="input-wrap">
-      <input class="login-input" id="pw-input" type="password" placeholder="Enter password" autocomplete="current-password"/>
-      <button class="eye-btn" id="eye-btn" onclick="toggleEye()">
-        <svg id="eye-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      </button>
-    </div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Enter Gallery</button>
-    <div class="login-error" id="login-err"></div>
-    <div class="login-footer">
-      <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/></svg>
-      End-to-end protected · Session expires in 8 hours
-    </div>
+    <button id="login-btn" onclick="login()">Enter Gallery</button>
+    <div class="error" id="login-error"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════
-     APP
-════════════════════════════════════ -->
 <div id="app">
-
-  <!-- Download progress bar -->
-  <div class="dl-bar" id="dl-bar">
-    <div class="dl-spinner"></div>
-    <span id="dl-msg">Downloading…</span>
-  </div>
-
+  <div class="dl-bar" id="dl-bar"><span>⬇️ Downloading...</span></div>
   <header>
     <div class="logo">Hamzax <span>Gallery</span></div>
     <div class="header-right">
-      <div class="nav-tabs">
-        <button class="nav-tab active" data-tab="all"   onclick="setTab(this)">All</button>
-        <button class="nav-tab"        data-tab="photos" onclick="setTab(this)">Photos</button>
-        <button class="nav-tab"        data-tab="videos" onclick="setTab(this)">Videos</button>
-      </div>
-      <div class="session-badge" id="session-badge">Session: 8h</div>
-      <button class="logout-btn" onclick="logout()">
-        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
-        Logout
-      </button>
+      <div class="session-badge" id="session-timer">Session: --h --m</div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </header>
-
   <div class="stats-bar">
-    <div class="stat"><span class="stat-val" id="st-total">—</span><span class="stat-label">Total</span></div>
-    <div class="stat"><span class="stat-val" id="st-photos">—</span><span class="stat-label">Photos</span></div>
-    <div class="stat"><span class="stat-val" id="st-videos">—</span><span class="stat-label">Videos</span></div>
-    <div class="stat"><span class="stat-val" id="st-size">—</span><span class="stat-label">Total Size</span></div>
+    <div class="stat"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Total</div></div>
+    <div class="stat"><div class="stat-value" id="stat-photos">0</div><div class="stat-label">Photos</div></div>
+    <div class="stat"><div class="stat-value" id="stat-videos">0</div><div class="stat-label">Videos</div></div>
+    <div class="stat"><div class="stat-value" id="stat-size">0 MB</div><div class="stat-label">Size</div></div>
   </div>
-
   <div class="toolbar">
-    <div class="filter-chips">
-      <button class="chip active" data-f="all"  onclick="setFilter(this)">All</button>
-      <button class="chip"        data-f="4k"   onclick="setFilter(this)">4K</button>
-      <button class="chip"        data-f="hd"   onclick="setFilter(this)">HD</button>
+    <div class="filters">
+      <button class="chip active" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="chip" data-filter="photos" onclick="setFilter('photos')">Photos</button>
+      <button class="chip" data-filter="videos" onclick="setFilter('videos')">Videos</button>
+      <button class="chip" data-filter="4k" onclick="setFilter('4k')">4K</button>
+      <button class="chip" data-filter="hd" onclick="setFilter('hd')">HD</button>
     </div>
-    <div class="toolbar-right">
-      <div class="search-wrap">
-        <div class="search-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg></div>
-        <input class="search-input" id="search-input" type="text" placeholder="Search files…" oninput="render()"/>
-      </div>
-      <div class="view-btns">
-        <button class="view-btn active" id="vg" onclick="setView('grid')" title="Grid view">
-          <svg fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-        </button>
-        <button class="view-btn" id="vl" onclick="setView('list')" title="List view">
-          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
-        </button>
-      </div>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search" placeholder="Search..." oninput="render()">
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="setView('grid')">▦</button>
+      <button class="view-btn" onclick="setView('list')">☰</button>
     </div>
   </div>
-
-  <div class="gallery-wrap">
-    <div class="gallery-grid" id="gallery"></div>
+  <div class="gallery-grid" id="gallery"></div>
+  <div class="selection-bar" id="selection-bar">
+    <span id="selected-count">0 selected</span>
+    <button class="btn-sm" onclick="clearSelection()">Clear</button>
+    <button class="btn-sm primary" onclick="downloadSelected()">Download all</button>
   </div>
+</div>
 
-  <!-- Selection bar -->
-  <div class="sel-bar" id="sel-bar">
-    <span class="sel-n" id="sel-n">0 selected</span>
-    <div class="sel-btns">
-      <button class="sel-btn" onclick="clearSel()">Clear</button>
-      <button class="sel-btn primary" onclick="downloadSelected()">Download All</button>
-    </div>
+<div id="lightbox">
+  <div class="lb-header">
+    <div><strong id="lb-title"></strong> <span id="lb-meta"></span></div>
+    <button class="btn-sm" onclick="closeLightbox()">✕ Close</button>
   </div>
-
-  <!-- Lightbox -->
-  <div id="lb">
-    <div class="lb-top">
-      <div class="lb-title-area">
-        <div class="lb-name" id="lb-name"></div>
-        <div class="lb-meta" id="lb-meta"></div>
-      </div>
-      <div class="lb-quality">
-        <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-        <span id="lb-quality-txt">HD Original Quality</span>
-      </div>
-      <div class="lb-actions">
-        <button class="lb-btn primary" onclick="downloadCurrent()">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-          Download
-        </button>
-        <button class="lb-close" onclick="closeLb()">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-    </div>
-    <div class="lb-media-area">
-      <div id="lb-media-wrap"></div>
-      <button class="lb-arrow" id="lb-prev" onclick="lbMove(-1)">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
-      </button>
-      <button class="lb-arrow" id="lb-next" onclick="lbMove(1)">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
-      </button>
-    </div>
-    <div class="lb-bottom">
-      <div class="lb-dots" id="lb-dots"></div>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div class="toast" id="toast">
-    <div class="toast-icon-wrap">
-      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" id="toast-icon">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-      </svg>
-    </div>
-    <span id="toast-msg"></span>
-  </div>
-
-</div><!-- /app -->
+  <div class="lb-media" id="lb-media"></div>
+  <div id="lb-prev" class="lb-nav" onclick="prevMedia()">‹</div>
+  <div id="lb-next" class="lb-nav" onclick="nextMedia()">›</div>
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
-/* ══════════════════════════════════════════
-   CONFIG — only non-sensitive setting here
-   The Worker URL is the ONLY thing in the frontend.
-   Password is NOT here. B2 info is NOT here.
-══════════════════════════════════════════ */
-const WORKER = 'https://gentle-bread-3cb2.jhaji1223.workers.dev';
+  // ========== CONFIG ==========
+  const WORKER = 'https://gentle-bread-3cb2.jhaji1223.workers.dev';
 
-/* ══════════════════════════════════════════
-   STATE
-══════════════════════════════════════════ */
-let sessionToken  = null;
-let sessionExpiry = 0;
-let sessionTimer  = null;
-let allItems      = [];
-let filtered      = [];
-let selected      = new Set();
-let currentTab    = 'all';
-let currentFilter = 'all';
-let currentView   = 'grid';
-let lbIdx         = 0;
+  // ========== STATE ==========
+  let sessionToken = null;
+  let sessionExpiry = 0;
+  let allItems = [];
+  let filteredItems = [];
+  let selected = new Set();
+  let currentFilter = 'all';
+  let currentView = 'grid';
+  let searchTerm = '';
+  let currentLightboxIndex = 0;
+  let sessionInterval = null;
 
-/* ══════════════════════════════════════════
-   SESSION — localStorage for persist across page reload
-══════════════════════════════════════════ */
-function saveSession(token, expiry) {
-  try { sessionStorage.setItem('hx_tok', JSON.stringify({ token, expiry })); } catch{}
-}
-function getSession() {
-  try {
-    const s = JSON.parse(sessionStorage.getItem('hx_tok') || 'null');
-    if (s && Date.now() < s.expiry) return s;
-  } catch {}
-  return null;
-}
-function clearSession() {
-  try { sessionStorage.removeItem('hx_tok'); } catch {}
-}
+  // ========== HELPERS ==========
+  function authHeaders() {
+    return { 'Authorization': `Bearer ${sessionToken}` };
+  }
 
-function authHdr() {
-  return { 'Authorization': `Bearer ${sessionToken}` };
-}
+  function fmtSize(bytes) {
+    if (!bytes) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+    if (bytes < 1073741824) return (bytes/1048576).toFixed(1) + ' MB';
+    return (bytes/1073741824).toFixed(1) + ' GB';
+  }
 
-function startSessionTimer() {
-  if (sessionTimer) clearInterval(sessionTimer);
-  sessionTimer = setInterval(() => {
-    const left = sessionExpiry - Date.now();
-    if (left <= 0) { logout(); return; }
-    const h = Math.floor(left / 3600000);
-    const m = Math.floor((left % 3600000) / 60000);
-    document.getElementById('session-badge').textContent =
-      `Session: ${h}h ${m}m`;
-  }, 30000);
-  // run once immediately
-  const left = sessionExpiry - Date.now();
-  const h = Math.floor(left / 3600000);
-  const m = Math.floor((left % 3600000) / 60000);
-  document.getElementById('session-badge').textContent = `Session: ${h}h ${m}m`;
-}
+  function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.background = isError ? '#e05555' : '#1c1c26';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
 
-function logout() {
-  if (sessionTimer) clearInterval(sessionTimer);
-  sessionToken  = null;
-  sessionExpiry = 0;
-  clearSession();
-  document.getElementById('app').style.display          = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('pw-input').value             = '';
-  allItems  = [];
-  filtered  = [];
-  selected  = new Set();
-}
+  function showDownloadBar(show) {
+    const bar = document.getElementById('dl-bar');
+    bar.classList.toggle('show', show);
+  }
 
-/* ══════════════════════════════════════════
-   LOGIN
-══════════════════════════════════════════ */
-async function doLogin() {
-  const pw  = document.getElementById('pw-input').value.trim();
-  const btn = document.getElementById('login-btn');
-  const err = document.getElementById('login-err');
+  // ========== SESSION ==========
+  function saveSession(token, expiryMs) {
+    sessionToken = token;
+    sessionExpiry = Date.now() + expiryMs * 1000;
+    sessionStorage.setItem('gallery_session', JSON.stringify({ token, expiry: sessionExpiry }));
+    if (sessionInterval) clearInterval(sessionInterval);
+    sessionInterval = setInterval(() => {
+      const left = Math.max(0, sessionExpiry - Date.now());
+      const hours = Math.floor(left / 3600000);
+      const mins = Math.floor((left % 3600000) / 60000);
+      document.getElementById('session-timer').innerText = `Session: ${hours}h ${mins}m`;
+      if (left <= 0) logout();
+    }, 30000);
+  }
 
-  if (!pw) { showError('Please enter the password.'); return; }
+  function getStoredSession() {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem('gallery_session'));
+      if (stored && stored.expiry > Date.now()) {
+        sessionToken = stored.token;
+        sessionExpiry = stored.expiry;
+        return true;
+      }
+    } catch(e) {}
+    return false;
+  }
 
-  btn.disabled = true;
-  btn.textContent = 'Verifying…';
-  err.classList.remove('show');
+  function logout() {
+    sessionToken = null;
+    sessionExpiry = 0;
+    sessionStorage.removeItem('gallery_session');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    if (sessionInterval) clearInterval(sessionInterval);
+  }
 
-  try {
-    const res  = await fetch(`${WORKER}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw })
+  // ========== LOGIN ==========
+  async function login() {
+    const pw = document.getElementById('password').value;
+    const btn = document.getElementById('login-btn');
+    const errDiv = document.getElementById('login-error');
+    errDiv.classList.remove('show');
+    btn.disabled = true;
+    btn.innerText = 'Verifying...';
+    try {
+      const res = await fetch(`${WORKER}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Wrong password');
+      saveSession(data.token, data.expiresIn);
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadMedia();
+    } catch (err) {
+      errDiv.innerText = err.message;
+      errDiv.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Enter Gallery';
+    }
+  }
+
+  function togglePassword() {
+    const inp = document.getElementById('password');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  // ========== LOAD MEDIA (via Worker /list) ==========
+  async function loadMedia() {
+    const galleryDiv = document.getElementById('gallery');
+    galleryDiv.innerHTML = '<div style="text-align:center;padding:60px">Loading gallery...</div>';
+    try {
+      const res = await fetch(`${WORKER}/list`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+      allItems = data.items || [];
+      updateStats();
+      render();
+      startLazyLoading();
+    } catch (err) {
+      galleryDiv.innerHTML = `<div style="text-align:center;padding:60px;color:#e05555">Failed to load: ${err.message}</div>`;
+    }
+  }
+
+  function updateStats() {
+    const photos = allItems.filter(i => i.type === 'image').length;
+    const videos = allItems.filter(i => i.type === 'video').length;
+    const totalSize = allItems.reduce((sum, i) => sum + (i.size || 0), 0);
+    document.getElementById('stat-total').innerText = allItems.length;
+    document.getElementById('stat-photos').innerText = photos;
+    document.getElementById('stat-videos').innerText = videos;
+    document.getElementById('stat-size').innerText = fmtSize(totalSize);
+  }
+
+  // ========== FILTER & RENDER ==========
+  function getFiltered() {
+    const searchLower = document.getElementById('search').value.toLowerCase();
+    return allItems.filter(item => {
+      if (currentFilter === 'photos' && item.type !== 'image') return false;
+      if (currentFilter === 'videos' && item.type !== 'video') return false;
+      if (currentFilter === '4k' && item.res !== '4K') return false;
+      if (currentFilter === 'hd' && item.res !== 'HD') return false;
+      if (searchLower && !item.name.toLowerCase().includes(searchLower)) return false;
+      return true;
     });
-    const data = await res.json();
+  }
 
-    if (!res.ok) {
-      showError(data.error || 'Incorrect password. Please try again.');
-      btn.disabled    = false;
-      btn.textContent = 'Enter Gallery';
+  function render() {
+    filteredItems = getFiltered();
+    const gallery = document.getElementById('gallery');
+    gallery.className = `gallery-grid ${currentView === 'list' ? 'list-view' : ''}`;
+    if (filteredItems.length === 0) {
+      gallery.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px">No files found</div>';
       return;
     }
-
-    sessionToken  = data.token;
-    sessionExpiry = data.expiry;
-    saveSession(sessionToken, sessionExpiry);
-
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display          = 'block';
-
-    startSessionTimer();
-    loadMedia();
-
-  } catch (e) {
-    showError('Could not connect to server. Check your internet connection.');
-    btn.disabled    = false;
-    btn.textContent = 'Enter Gallery';
-  }
-}
-
-function showError(msg) {
-  const el = document.getElementById('login-err');
-  el.textContent = msg;
-  el.classList.add('show');
-}
-
-function toggleEye() {
-  const input = document.getElementById('pw-input');
-  const icon  = document.getElementById('eye-icon');
-  if (input.type === 'password') {
-    input.type    = 'text';
-    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>';
-  } else {
-    input.type    = 'password';
-    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>';
-  }
-}
-
-document.getElementById('pw-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
-
-/* ══════════════════════════════════════════
-   LOAD MEDIA
-══════════════════════════════════════════ */
-async function loadMedia() {
-  const gallery = document.getElementById('gallery');
-  gallery.innerHTML = `<div class="loading" style="grid-column:1/-1"><div class="spinner"></div><div>Loading your gallery…</div></div>`;
-
-  try {
-    const res  = await fetch(`${WORKER}/list`, { headers: authHdr() });
-    if (res.status === 401) { logout(); return; }
-    if (!res.ok) throw new Error(`Server error ${res.status}`);
-    const data = await res.json();
-
-    allItems = data.items || [];
-
-    // Update stats
-    const photos = allItems.filter(i => i.type === 'image');
-    const videos = allItems.filter(i => i.type === 'video');
-    const total  = allItems.reduce((s, i) => s + (i.size || 0), 0);
-
-    document.getElementById('st-total').textContent  = allItems.length;
-    document.getElementById('st-photos').textContent = photos.length;
-    document.getElementById('st-videos').textContent = videos.length;
-    document.getElementById('st-size').textContent   = fmtSize(total);
-
-    render();
-    startIntersectionObserver();
-
-  } catch (e) {
-    gallery.innerHTML = `<div class="empty" style="grid-column:1/-1">
-      <div class="empty-icon">⚠️</div>
-      <div class="empty-title">Failed to load gallery</div>
-      <div class="empty-sub">${e.message}</div>
-    </div>`;
-  }
-}
-
-/* ══════════════════════════════════════════
-   RENDER
-══════════════════════════════════════════ */
-function render() {
-  const search = document.getElementById('search-input').value.toLowerCase();
-
-  filtered = allItems.filter(item => {
-    if (currentTab === 'photos' && item.type !== 'image') return false;
-    if (currentTab === 'videos' && item.type !== 'video') return false;
-    if (currentFilter === '4k'  && item.res  !== '4K')   return false;
-    if (currentFilter === 'hd'  && item.res  !== 'HD')   return false;
-    if (search && !item.name.toLowerCase().includes(search)) return false;
-    return true;
-  });
-
-  const gallery = document.getElementById('gallery');
-  gallery.className = `gallery-grid${currentView === 'list' ? ' list-view' : ''}`;
-
-  if (filtered.length === 0) {
-    gallery.innerHTML = `<div class="empty" style="grid-column:1/-1">
-      <div class="empty-icon">🔍</div>
-      <div class="empty-title">No files found</div>
-      <div class="empty-sub">Try adjusting your filters or search term.</div>
-    </div>`;
-    return;
+    gallery.innerHTML = filteredItems.map((item, idx) => `
+      <div class="card ${selected.has(item.id) ? 'sel' : ''}" data-id="${item.id}" data-index="${idx}">
+        <div class="thumb" data-idx="${idx}">
+          <div class="thumb-skeleton" style="position:absolute;inset:0;background:#1c1c26"></div>
+          <img data-src="${WORKER}${item.thumbPath}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;opacity:0;transition:0.2s">
+          ${item.type === 'video' ? '<div class="play-overlay">▶️</div>' : ''}
+          <div class="badge">${item.res === '4K' ? '4K' : (item.type === 'video' ? 'VIDEO' : 'HD')}</div>
+          <div class="check" onclick="event.stopPropagation(); toggleSelect('${item.id}')">${selected.has(item.id) ? '✓' : ''}</div>
+        </div>
+        <div class="info">
+          <div class="filename">${escapeHtml(item.name)}</div>
+          <div class="meta"><span>${fmtSize(item.size)}</span><span>${item.date}</span></div>
+          <div class="actions">
+            <button class="btn-sm" onclick="openLightbox(${idx})">👁️ View</button>
+            <button class="btn-sm primary" onclick="downloadItem('${item.id}')">⬇️ Download</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
   }
 
-  gallery.innerHTML = filtered.map((item, idx) => cardHTML(item, idx)).join('');
-
-  // Observe new images for lazy load
-  gallery.querySelectorAll('img[data-src]').forEach(img => observer?.observe(img));
-}
-
-/* ══════════════════════════════════════════
-   LAZY LOADING — IntersectionObserver
-══════════════════════════════════════════ */
-let observer;
-function startIntersectionObserver() {
-  if (observer) observer.disconnect();
-  observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const img = entry.target;
-      const src = img.dataset.src;
-      if (!src) return;
-      img.src = src;
-      fetch(src, { headers: authHdr() })
-        .then(r => r.blob())
-        .then(blob => {
-          img.src = URL.createObjectURL(blob);
-          img.classList.add('loaded');
-        })
-        .catch(() => { img.src = ''; img.classList.add('loaded'); });
-      observer.unobserve(img);
+  function escapeHtml(str) {
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
     });
-  }, { rootMargin: '200px' });
-}
+  }
 
-/* ══════════════════════════════════════════
-   CARD HTML
-══════════════════════════════════════════ */
-const iV = `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
-const iD = `<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>`;
+  // ========== LAZY LOADING WITH AUTH (no 401) ==========
+  let lazyObserver = null;
+  function startLazyLoading() {
+    if (lazyObserver) lazyObserver.disconnect();
+    lazyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const img = entry.target;
+        const src = img.dataset.src;
+        if (!src) return;
+        // Fetch with auth header, then set blob URL
+        fetch(src, { headers: authHeaders() })
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.blob();
+          })
+          .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            img.src = blobUrl;
+            img.style.opacity = '1';
+            img.onload = () => URL.revokeObjectURL(blobUrl);
+            // remove skeleton
+            const skeleton = img.parentElement?.querySelector('.thumb-skeleton');
+            if (skeleton) skeleton.remove();
+          })
+          .catch(err => {
+            console.warn('Thumb load error', src, err);
+            img.style.opacity = '0.3';
+          });
+        lazyObserver.unobserve(img);
+      });
+    }, { rootMargin: '200px' });
+    document.querySelectorAll('#gallery img[data-src]').forEach(img => lazyObserver.observe(img));
+  }
 
-function cardHTML(item, idx) {
-  const isVid = item.type === 'video';
-  const sel   = selected.has(item.id);
-  const badge = isVid
-    ? `<div class="type-badge vid">VIDEO</div>`
-    : (item.res === '4K' ? `<div class="type-badge fourtk">4K</div>` : '');
-
-  const thumbSrc = `${WORKER}${item.thumbPath}`;
-
-  return `<div class="card${sel ? ' sel' : ''}" id="card-${item.id}">
-    <div class="thumb-wrap" onclick="openLb(${idx})">
-      <div class="thumb-skeleton"></div>
-      <img data-src="${thumbSrc}" src="" alt="${item.name}" decoding="async"/>
-      ${isVid ? `<div class="play-over"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>` : ''}
-      ${badge}
-    </div>
-    <div class="chk" onclick="toggleSel(event,'${item.id}')">
-      ${sel ? `<svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : ''}
-    </div>
-    <div class="card-info">
-      <div class="card-name">${item.name}</div>
-      <div class="card-meta">
-        <span>${fmtSize(item.size)}</span>
-        <span>${item.date}</span>
-        ${item.res === '4K' ? '<span style="color:var(--accent2)">4K</span>' : ''}
-      </div>
-      <div class="card-actions">
-        <button class="ca-btn" onclick="openLb(${idx})">${iV} View</button>
-        <button class="ca-btn primary" onclick="downloadItem(event,'${item.id}')">${iD} Download</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-/* ══════════════════════════════════════════
-   LIGHTBOX
-══════════════════════════════════════════ */
-function openLb(idx) {
-  lbIdx = idx;
-  renderLb();
-  document.getElementById('lb').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeLb() {
-  document.getElementById('lb').classList.remove('open');
-  document.getElementById('lb-media-wrap').innerHTML = '';
-  document.body.style.overflow = '';
-}
-function renderLb() {
-  const item = filtered[lbIdx];
-  if (!item) return;
-
-  document.getElementById('lb-name').textContent        = item.name;
-  document.getElementById('lb-meta').textContent        = `${item.res} · ${fmtSize(item.size)} · ${item.date}`;
-  document.getElementById('lb-quality-txt').textContent = item.res === '4K' ? '4K Original Quality' : 'HD Original Quality';
-
-  const wrap     = document.getElementById('lb-media-wrap');
-  const mediaSrc = `${WORKER}${item.mediaPath}`;
-
-  // Clear previous content
-  wrap.innerHTML = '';
-
-  if (item.type === 'video') {
-    // Create video element WITHOUT src attribute
-    const video = document.createElement('video');
-    video.controls = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.preload = 'metadata';
-    video.style.cssText = 'max-width:92vw;max-height:80vh;border-radius:10px;background:#000;outline:none';
-    wrap.appendChild(video);
-
-    // Fetch video with auth header and convert to blob URL
-    fetch(mediaSrc, { headers: authHdr() })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.blob();
-      })
-      .then(blob => {
+  // ========== LIGHTBOX (full-res with auth) ==========
+  async function openLightbox(index) {
+    currentLightboxIndex = index;
+    const item = filteredItems[index];
+    if (!item) return;
+    const lb = document.getElementById('lightbox');
+    const title = document.getElementById('lb-title');
+    const meta = document.getElementById('lb-meta');
+    title.innerText = item.name;
+    meta.innerText = `${item.res} · ${fmtSize(item.size)} · ${item.date}`;
+    const mediaDiv = document.getElementById('lb-media');
+    mediaDiv.innerHTML = '<div style="text-align:center">Loading...</div>';
+    lb.classList.add('open');
+    // fetch full media with auth
+    const mediaUrl = `${WORKER}${item.mediaPath}`;
+    try {
+      if (item.type === 'video') {
+        const video = document.createElement('video');
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.style.maxWidth = '92vw';
+        video.style.maxHeight = '80vh';
+        video.style.borderRadius = '16px';
+        const resp = await fetch(mediaUrl, { headers: authHeaders() });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
         const blobUrl = URL.createObjectURL(blob);
         video.src = blobUrl;
-        video.load();
-        video.play().catch(e => console.warn('Autoplay blocked:', e));
-        // Revoke blob URL when video is done or replaced
         video.onended = () => URL.revokeObjectURL(blobUrl);
-      })
-      .catch(err => {
-        console.error('Video load failed:', err);
-        wrap.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load video: ${err.message}</div>`;
-      });
-  } else {
-    // Image: same as before, fetch with auth then blob URL
-    const img = document.createElement('img');
-    img.style.cssText = 'max-width:92vw;max-height:80vh;border-radius:10px;object-fit:contain';
-    img.alt = item.name;
-    wrap.appendChild(img);
-    fetch(mediaSrc, { headers: authHdr() })
-      .then(res => res.blob())
-      .then(blob => {
+        mediaDiv.innerHTML = '';
+        mediaDiv.appendChild(video);
+        video.play().catch(e => console.log('autoplay blocked'));
+      } else {
+        const img = document.createElement('img');
+        img.style.maxWidth = '92vw';
+        img.style.maxHeight = '80vh';
+        const resp = await fetch(mediaUrl, { headers: authHeaders() });
+        const blob = await resp.blob();
         const blobUrl = URL.createObjectURL(blob);
         img.src = blobUrl;
         img.onload = () => URL.revokeObjectURL(blobUrl);
-      })
-      .catch(err => {
-        console.error('Image load failed:', err);
-        wrap.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load image</div>`;
-      });
+        mediaDiv.innerHTML = '';
+        mediaDiv.appendChild(img);
+      }
+    } catch (err) {
+      mediaDiv.innerHTML = `<div style="color:#e05555">Failed to load media: ${err.message}</div>`;
+    }
+    updateNavButtons();
   }
 
-  // Navigation buttons
-  document.getElementById('lb-prev').style.display = lbIdx > 0 ? 'flex' : 'none';
-  document.getElementById('lb-next').style.display = lbIdx < filtered.length - 1 ? 'flex' : 'none';
-
-  // Dots
-  const total = Math.min(filtered.length, 9);
-  const base  = Math.max(0, Math.min(lbIdx - 4, filtered.length - total));
-  document.getElementById('lb-dots').innerHTML = Array.from({ length: total }, (_, i) => {
-    const r = base + i;
-    return `<div class="lb-dot${r === lbIdx ? ' active' : ''}" onclick="lbGoto(${r})"></div>`;
-  }).join('');
-}
-function lbMove(d) {
-  lbIdx = Math.max(0, Math.min(filtered.length - 1, lbIdx + d));
-  document.getElementById('lb-media-wrap').innerHTML = '';
-  renderLb();
-}
-function lbGoto(i) {
-  lbIdx = i;
-  document.getElementById('lb-media-wrap').innerHTML = '';
-  renderLb();
-}
-function downloadCurrent() { downloadItem(null, filtered[lbIdx]?.id); }
-
-/* ══════════════════════════════════════════
-   DOWNLOAD
-══════════════════════════════════════════ */
-async function downloadItem(e, id) {
-  if (e) e.stopPropagation();
-  const item = allItems.find(i => i.id === id);
-  if (!item) return;
-  showDl(`Downloading ${item.name}…`);
-  try {
-    const res = await fetch(`${WORKER}${item.dlPath}`, { headers: authHdr() });
-    if (res.status === 401) { logout(); return; }
-    if (!res.ok) throw new Error(`Server error ${res.status}`);
-    const blob = await res.blob();
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
-    a.download = item.filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
-    hideDl();
-    showToast(`Saved: ${item.name}`, 'ok');
-  } catch (err) {
-    hideDl();
-    showToast(`Download failed: ${err.message}`, 'err');
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lb-media').innerHTML = '';
   }
-}
 
-async function downloadSelected() {
-  for (const id of [...selected]) {
-    await downloadItem(null, id);
-    await new Promise(r => setTimeout(r, 600));
+  function prevMedia() {
+    if (currentLightboxIndex > 0) openLightbox(currentLightboxIndex - 1);
   }
-  clearSel();
-}
-
-/* ══════════════════════════════════════════
-   SELECTION
-══════════════════════════════════════════ */
-function toggleSel(e, id) {
-  e.stopPropagation();
-  selected.has(id) ? selected.delete(id) : selected.add(id);
-  const card = document.getElementById('card-' + id);
-  if (card) {
-    card.classList.toggle('sel', selected.has(id));
-    card.querySelector('.chk').innerHTML = selected.has(id)
-      ? `<svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : '';
+  function nextMedia() {
+    if (currentLightboxIndex < filteredItems.length - 1) openLightbox(currentLightboxIndex + 1);
   }
-  const n = selected.size;
-  document.getElementById('sel-bar').classList.toggle('on', n > 0);
-  document.getElementById('sel-n').textContent = n + ' selected';
-}
-function clearSel() {
-  selected.clear();
-  document.getElementById('sel-bar').classList.remove('on');
-  document.querySelectorAll('.card.sel').forEach(c => {
-    c.classList.remove('sel');
-    c.querySelector('.chk').innerHTML = '';
-  });
-}
-
-/* ══════════════════════════════════════════
-   TABS / FILTERS / VIEW
-══════════════════════════════════════════ */
-function setTab(btn)    { currentTab = btn.dataset.tab; document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
-function setFilter(btn) { currentFilter = btn.dataset.f; document.querySelectorAll('.chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
-function setView(v)     { currentView = v; document.getElementById('vg').classList.toggle('active', v === 'grid'); document.getElementById('vl').classList.toggle('active', v === 'list'); render(); }
-
-/* ══════════════════════════════════════════
-   UI HELPERS
-══════════════════════════════════════════ */
-function fmtSize(b) {
-  if (!b) return '—';
-  if (b > 1073741824) return (b / 1073741824).toFixed(1) + ' GB';
-  if (b > 1048576)    return (b / 1048576).toFixed(1)    + ' MB';
-  if (b > 1024)       return (b / 1024).toFixed(1)       + ' KB';
-  return b + ' B';
-}
-
-function showDl(msg) { document.getElementById('dl-msg').textContent = msg; document.getElementById('dl-bar').classList.add('show'); }
-function hideDl()    { document.getElementById('dl-bar').classList.remove('show'); }
-
-let _tt;
-function showToast(msg, type = 'ok') {
-  const t  = document.getElementById('toast');
-  const ic = document.getElementById('toast-icon');
-  document.getElementById('toast-msg').textContent = msg;
-  t.className  = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-  ic.innerHTML = type === 'err'
-    ? `<path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>`
-    : `<path stroke-linecap="round" d="M5 13l4 4L19 7"/>`;
-  clearTimeout(_tt);
-  _tt = setTimeout(() => t.classList.remove('show'), 3500);
-}
-
-/* ══════════════════════════════════════════
-   KEYBOARD
-══════════════════════════════════════════ */
-document.addEventListener('keydown', e => {
-  if (document.getElementById('lb').classList.contains('open')) {
-    if (e.key === 'ArrowLeft')        lbMove(-1);
-    if (e.key === 'ArrowRight')       lbMove(1);
-    if (e.key === 'Escape')           closeLb();
-    if (e.key === 'd' || e.key === 'D') downloadCurrent();
-  } else if (e.key === 'Escape') clearSel();
-});
-
-/* ══════════════════════════════════════════
-   INIT — restore session if still valid
-══════════════════════════════════════════ */
-(function init() {
-  const s = getSession();
-  if (s) {
-    sessionToken  = s.token;
-    sessionExpiry = s.expiry;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display          = 'block';
-    startSessionTimer();
-    loadMedia();
+  function updateNavButtons() {
+    document.getElementById('lb-prev').style.display = currentLightboxIndex > 0 ? 'flex' : 'none';
+    document.getElementById('lb-next').style.display = currentLightboxIndex < filteredItems.length-1 ? 'flex' : 'none';
   }
-})();
+
+  // ========== DOWNLOAD ==========
+  async function downloadItem(id) {
+    const item = allItems.find(i => i.id === id);
+    if (!item) return;
+    showDownloadBar(true);
+    try {
+      const res = await fetch(`${WORKER}${item.dlPath}`, { headers: authHeaders() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = item.filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast(`Downloaded ${item.name}`);
+    } catch (err) {
+      showToast(`Download failed: ${err.message}`, true);
+    } finally {
+      showDownloadBar(false);
+    }
+  }
+
+  async function downloadSelected() {
+    for (let id of selected) {
+      await downloadItem(id);
+      await new Promise(r => setTimeout(r, 500));
+    }
+    clearSelection();
+  }
+
+  // ========== SELECTION ==========
+  function toggleSelect(id) {
+    if (selected.has(id)) selected.delete(id);
+    else selected.add(id);
+    render();
+    const bar = document.getElementById('selection-bar');
+    const countSpan = document.getElementById('selected-count');
+    const count = selected.size;
+    if (count > 0) {
+      bar.classList.add('show');
+      countSpan.innerText = `${count} selected`;
+    } else {
+      bar.classList.remove('show');
+    }
+  }
+  function clearSelection() {
+    selected.clear();
+    render();
+    document.getElementById('selection-bar').classList.remove('show');
+  }
+
+  // ========== UI CONTROLS ==========
+  function setFilter(type) {
+    currentFilter = type;
+    document.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
+    document.querySelector(`.chip[data-filter="${type}"]`).classList.add('active');
+    render();
+    startLazyLoading();
+  }
+  function setView(view) {
+    currentView = view;
+    document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+    if (view === 'grid') document.querySelector('.view-btn:first-child').classList.add('active');
+    else document.querySelector('.view-btn:last-child').classList.add('active');
+    render();
+    startLazyLoading();
+  }
+
+  // ========== INIT ==========
+  (function init() {
+    if (getStoredSession()) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadMedia();
+    }
+  })();
 </script>
 </body>
 </html>
