@@ -633,7 +633,6 @@ function closeLb() {
   document.getElementById('lb-media-wrap').innerHTML = '';
   document.body.style.overflow = '';
 }
-
 function renderLb() {
   const item = filtered[lbIdx];
   if (!item) return;
@@ -645,33 +644,61 @@ function renderLb() {
   const wrap     = document.getElementById('lb-media-wrap');
   const mediaSrc = `${WORKER}${item.mediaPath}`;
 
+  // Clear previous content
+  wrap.innerHTML = '';
+
   if (item.type === 'video') {
-    wrap.innerHTML = `<video controls autoplay playsinline preload="metadata"
-      style="max-width:92vw;max-height:80vh;border-radius:10px;background:#000;outline:none">
-      <source src="${mediaSrc}"/>
-    </video>`;
-    // Inject auth header via fetch + object URL for video
+    // Create video element WITHOUT src attribute
+    const video = document.createElement('video');
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    video.style.cssText = 'max-width:92vw;max-height:80vh;border-radius:10px;background:#000;outline:none';
+    wrap.appendChild(video);
+
+    // Fetch video with auth header and convert to blob URL
     fetch(mediaSrc, { headers: authHdr() })
-      .then(r => r.blob())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
       .then(blob => {
-        const vid = wrap.querySelector('video');
-        if (vid) { vid.src = URL.createObjectURL(blob); vid.load(); vid.play().catch(()=>{}); }
-      }).catch(() => {});
+        const blobUrl = URL.createObjectURL(blob);
+        video.src = blobUrl;
+        video.load();
+        video.play().catch(e => console.warn('Autoplay blocked:', e));
+        // Revoke blob URL when video is done or replaced
+        video.onended = () => URL.revokeObjectURL(blobUrl);
+      })
+      .catch(err => {
+        console.error('Video load failed:', err);
+        wrap.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load video: ${err.message}</div>`;
+      });
   } else {
+    // Image: same as before, fetch with auth then blob URL
     const img = document.createElement('img');
     img.style.cssText = 'max-width:92vw;max-height:80vh;border-radius:10px;object-fit:contain';
     img.alt = item.name;
-    wrap.innerHTML = '';
     wrap.appendChild(img);
     fetch(mediaSrc, { headers: authHdr() })
-      .then(r => r.blob())
-      .then(blob => { img.src = URL.createObjectURL(blob); })
-      .catch(() => {});
+      .then(res => res.blob())
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        img.src = blobUrl;
+        img.onload = () => URL.revokeObjectURL(blobUrl);
+      })
+      .catch(err => {
+        console.error('Image load failed:', err);
+        wrap.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load image</div>`;
+      });
   }
 
-  document.getElementById('lb-prev').style.display = lbIdx > 0                   ? 'flex' : 'none';
+  // Navigation buttons
+  document.getElementById('lb-prev').style.display = lbIdx > 0 ? 'flex' : 'none';
   document.getElementById('lb-next').style.display = lbIdx < filtered.length - 1 ? 'flex' : 'none';
 
+  // Dots
   const total = Math.min(filtered.length, 9);
   const base  = Math.max(0, Math.min(lbIdx - 4, filtered.length - total));
   document.getElementById('lb-dots').innerHTML = Array.from({ length: total }, (_, i) => {
@@ -679,7 +706,6 @@ function renderLb() {
     return `<div class="lb-dot${r === lbIdx ? ' active' : ''}" onclick="lbGoto(${r})"></div>`;
   }).join('');
 }
-
 function lbMove(d) {
   lbIdx = Math.max(0, Math.min(filtered.length - 1, lbIdx + d));
   document.getElementById('lb-media-wrap').innerHTML = '';
